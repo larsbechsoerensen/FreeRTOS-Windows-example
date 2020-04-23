@@ -87,7 +87,7 @@ static void taskA(void* pvParameters)
     /* Prevent the compiler warning about the unused parameter. */
 
     (void)pvParameters;    
-   // EventBits_t uxBits;
+    EventBits_t uxBits;
 
     for (;;)
     {
