@@ -113,7 +113,7 @@ static void taskB(void* pvParameters)
     {
 
         printf("   In task B\n");
-        BIT_0 | BIT_4, /* The bits within the event group to wait for. */
+      //  BIT_0 | BIT_4, /* The bits within the event group to wait for. */
             uxBits = xEventGroupWaitBits(
                 xEventGroup,   /* The event group being tested. */
                 BIT_0 | BIT_4,
