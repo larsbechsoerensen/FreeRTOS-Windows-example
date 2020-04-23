@@ -85,17 +85,21 @@ void main_blinky(void)
 static void taskA(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
-
     (void)pvParameters;    
-    EventBits_t uxBits;
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = 2000;
+
+    // Initialise the xLastWakeTime variable with the current time.
+    xLastWakeTime = xTaskGetTickCount();
 
     for (;;)
     {
         printf("In task A\n");
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
         xEventGroupSetBits(
             xEventGroup,    /* The event group being updated. */
             BIT_0 | BIT_4);
-        vTaskDelay(2000);
+        vTaskDelay(600);
     }
 }
 
@@ -103,19 +107,32 @@ static void taskB(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
     (void)pvParameters;
+    EventBits_t uxBits;
 
     for (;; )
     {
 
         printf("   In task B\n");
         BIT_0 | BIT_4, /* The bits within the event group to wait for. */
-            xEventGroupWaitBits(
+            uxBits = xEventGroupWaitBits(
                 xEventGroup,   /* The event group being tested. */
                 BIT_0 | BIT_4,
                 pdTRUE,        /* BIT_0 & BIT_4 should be cleared before returning. */
                 pdTRUE,
-                10000);
-        vTaskDelay(1000);
+                500);
+        if ((uxBits & (BIT_0 | BIT_4)) == (BIT_0 | BIT_4))
+        {
+            /* xEventGroupWaitBits() returned because both bits were set. */
+            printf("   In task B: event has happend\n");
+        }
+        else
+        {
+            /* xEventGroupWaitBits() returned because xTicksToWait ticks passed*/
+             printf("   In task B: timeout\n");
+         
+        }
+       
+        vTaskDelay(500);
     }
 }
 
