@@ -47,6 +47,8 @@ TaskHandle_t* xHandle_A = NULL;
 TaskHandle_t* xHandle_B = NULL;
 TaskHandle_t* xHandle_C = NULL;
 
+QueueHandle_t xQueue1, xQueue2;
+
 /*
  * The tasks as described in the comments at the top of this file.
  */
@@ -55,6 +57,12 @@ static void taskB(void* pvParameters);
 static void taskC(void* pvParameters);
 
 static void idelWork(int t);
+
+struct AMessage
+{
+    char ucMessageID;
+    char ucData[10];
+} xMessage;
 
 void main_blinky(void)
 { 
@@ -69,6 +77,14 @@ void main_blinky(void)
 
     xTaskCreate(taskC, "ZX", configMINIMAL_STACK_SIZE, NULL, taskC_PRIORITY, NULL);	/* The task handle is not required, so NULL is passed. */
 
+    xMessage.ucMessageID = 0x41;
+    memset(&(xMessage.ucData), 0x42, 10);
+    printf("\nmemset: %s\n", xMessage.ucData);
+    /* Create a queue capable of containing 10 unsigned long values. */
+    xQueue1 = xQueueCreate(10, sizeof(int));
+
+    xQueue2 = xQueueCreate(10, sizeof(struct AMessage));
+
     vTaskStartScheduler();
 
     for (;; );
@@ -79,15 +95,25 @@ void main_blinky(void)
 static void taskA(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
-    (void)pvParameters;    
+    (void)pvParameters;
+    int x = 42;
 
     for (;;)
     {
-        printf("In task A\n");
+        printf("In task A\n\n");
+        if (xQueueSendToBack(xQueue1, (void*)&x, (TickType_t)10) != pdPASS)
+        {
+            printf("Time out: Send int\n");
+        }
 
+        if (xQueueSendToBack(xQueue2, (void*)&xMessage, (TickType_t)0) != pdPASS)
+        {
+            printf("Time out: Send struct\n");
+        }
         vTaskDelay(2000);
     }
 }
+
 
 static void taskB(void* pvParameters)
 {
@@ -97,7 +123,30 @@ static void taskB(void* pvParameters)
     for (;; )
     {
         printf("   In task B\n");
-       
+        int i;
+        int* pti = &i;
+        if (xQueueReceive(xQueue1, &(i), (TickType_t)10) == pdPASS)
+        {
+            printf("\nReceived: %d\n", *pti);
+        }
+        else
+        {
+            printf("\nTime out: Received int\n");
+        }
+
+        struct AMessage xMessage, * ptxMessage;
+
+        if (xQueueReceive(xQueue2, &(xMessage), (TickType_t)10) == pdPASS)
+        {
+            printf("\nReceived struct msgId: %c\n", xMessage.ucMessageID);
+            char* data = xMessage.ucData;
+            *(data + 10) = '\0';
+            printf("\nReceived struct data: %s\n", data);
+
+        }
+        else {
+            printf("\nTime out: Received struct\n");
+        }
         vTaskDelay(1000);
     }
 }
