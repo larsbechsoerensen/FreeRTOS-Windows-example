@@ -35,6 +35,7 @@
 #include "timers.h"
 #include "semphr.h"
 #include "queue.h"
+#include "event_groups.h"
 
 /* Priorities at which the tasks are created. */
 #define taskA_PRIORITY		( tskIDLE_PRIORITY + 3 )
@@ -42,11 +43,24 @@
 #define	taskC_PRIORITY		( tskIDLE_PRIORITY + 1 )
 
 /*-----------------------------------------------------------*/
+#define BIT_0	( 1 << 0 )
+#define BIT_4	( 1 << 4 )
+
+
 
 TaskHandle_t* xHandle_A = NULL;
 TaskHandle_t* xHandle_B = NULL;
 TaskHandle_t* xHandle_C = NULL;
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+QueueHandle_t xQueue1, xQueue2;
+=======
+EventGroupHandle_t xEventGroup;
+>>>>>>> Stashed changes
+
+>>>>>>> Stashed changes
 /*
  * The tasks as described in the comments at the top of this file.
  */
@@ -69,6 +83,21 @@ void main_blinky(void)
 
     xTaskCreate(taskC, "ZX", configMINIMAL_STACK_SIZE, NULL, taskC_PRIORITY, NULL);	/* The task handle is not required, so NULL is passed. */
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+    xMessage.ucMessageID = 0x41;
+    memset(&(xMessage.ucData), 0x42, 10);
+    printf("\nmemset: %s\n", xMessage.ucData);
+    /* Create a queue capable of containing 10 unsigned long values. */
+    xQueue1 = xQueueCreate(10, sizeof(int));
+
+    xQueue2 = xQueueCreate(10, sizeof(struct AMessage));
+=======
+    xEventGroup = xEventGroupCreate();
+>>>>>>> Stashed changes
+
+>>>>>>> Stashed changes
     vTaskStartScheduler();
 
     for (;; );
@@ -79,12 +108,44 @@ void main_blinky(void)
 static void taskA(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
+<<<<<<< Updated upstream
     (void)pvParameters;    
 
     for (;;)
     {
         printf("In task A\n");
 
+=======
+<<<<<<< Updated upstream
+    (void)pvParameters;
+    int x = 42;
+
+    for (;;)
+    {
+        printf("In task A\n\n");
+        if (xQueueSendToBack(xQueue1, (void*)&x, (TickType_t)10) != pdPASS)
+        {
+            printf("Time out: Send int\n");
+        }
+
+        if (xQueueSendToBack(xQueue2, (void*)&xMessage, (TickType_t)0) != pdPASS)
+        {
+            printf("Time out: Send struct\n");
+        }
+=======
+    (void)pvParameters;    
+    EventBits_t uxBits;
+
+    for (;;)
+    {
+        printf("In task A\n");
+       
+        /* Set bit 0 and bit 4 in xEventGroup. */
+        uxBits = xEventGroupSetBits(
+            xEventGroup,    /* The event group being updated. */
+            BIT_0 | BIT_4);/* The bits being set. */
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         vTaskDelay(2000);
     }
 }
@@ -96,8 +157,47 @@ static void taskB(void* pvParameters)
 
     for (;; )
     {
+<<<<<<< Updated upstream
         printf("   In task B\n");
        
+=======
+<<<<<<< Updated upstream
+        printf(" In task B\n");
+        int i;
+        int* pti = &i;
+        if (xQueueReceive(xQueue1, &(i), (TickType_t)10) == pdPASS)
+        {
+            printf("\nReceived: %d\n", *pti);
+        }
+        else
+        {
+            printf("\nTime out: Received int\n");
+        }
+
+        struct AMessage xMessage, * ptxMessage;
+
+        if (xQueueReceive(xQueue2, &(xMessage), (TickType_t)10) == pdPASS)
+        {
+            printf("\nReceived struct msgId: %c\n", xMessage.ucMessageID);
+            char* data = xMessage.ucData;
+            *(data + 10) = '\0';
+            printf("\nReceived struct data: %s\n", data);
+
+        }
+        else {
+            printf("\nTime out: Received struct\n");
+        }
+=======
+        printf("   In task B\n");
+        xEventGroupWaitBits(
+            xEventGroup,   /* The event group being tested. */
+            BIT_0 | BIT_4, /* The bits within the event group to wait for. */
+            pdTRUE,        /* BIT_0 & BIT_4 should be cleared before returning. */
+            pdTRUE,       /* Wait for both bits to be set
+            xTicksToWait);/* Wait a maximum of 100ms for either bit to be set. */
+            
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         vTaskDelay(1000);
     }
 }
