@@ -48,11 +48,11 @@
 
 
 
-TaskHandle_t* xHandle_A = NULL;
-TaskHandle_t* xHandle_B = NULL;
-TaskHandle_t* xHandle_C = NULL;
+TaskHandle_t xHandle_A = NULL;
+TaskHandle_t xHandle_B = NULL;
+TaskHandle_t xHandle_C = NULL;
 
-
+EventGroupHandle_t xEventGroup;
 /*
  * The tasks as described in the comments at the top of this file.
  */
@@ -60,7 +60,6 @@ static void taskA(void* pvParameters);
 static void taskB(void* pvParameters);
 static void taskC(void* pvParameters);
 
-static void idelWork(int t);
 
 void main_blinky(void)
 { 
@@ -75,25 +74,27 @@ void main_blinky(void)
 
     xTaskCreate(taskC, "ZX", configMINIMAL_STACK_SIZE, NULL, taskC_PRIORITY, NULL);	/* The task handle is not required, so NULL is passed. */
 
-
+    xEventGroup = xEventGroupCreate();
     vTaskStartScheduler();
 
     for (;; );
 }
-/*-----------------------------------------------------------*/
+/*----------------------------------------------------------*/
 
 
 static void taskA(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
-<<<<<<< Updated upstream
+
     (void)pvParameters;    
-    EventBits_t uxBits;
+   // EventBits_t uxBits;
 
     for (;;)
     {
         printf("In task A\n");
-        uxBits = xEventGroupSetBits(
+        xEventGroupSetBits(
+            xEventGroup,    /* The event group being updated. */
+            BIT_0 | BIT_4);
         vTaskDelay(2000);
     }
 }
@@ -105,12 +106,15 @@ static void taskB(void* pvParameters)
 
     for (;; )
     {
-<<<<<<< Updated upstream
+
         printf("   In task B\n");
-            BIT_0 | BIT_4, /* The bits within the event group to wait for. */
-        xEventGroupWaitBits(
-            xEventGroup,   /* The event group being tested. */
-            pdTRUE,        /* BIT_0 & BIT_4 should be cleared before returning. */
+        BIT_0 | BIT_4, /* The bits within the event group to wait for. */
+            xEventGroupWaitBits(
+                xEventGroup,   /* The event group being tested. */
+                BIT_0 | BIT_4,
+                pdTRUE,        /* BIT_0 & BIT_4 should be cleared before returning. */
+                pdTRUE,
+                10000);
         vTaskDelay(1000);
     }
 }
