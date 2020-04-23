@@ -35,6 +35,7 @@
 #include "timers.h"
 #include "semphr.h"
 #include "queue.h"
+#include "message_buffer.h"
 
 /* Priorities at which the tasks are created. */
 #define taskA_PRIORITY		( tskIDLE_PRIORITY + 3 )
@@ -47,6 +48,8 @@ TaskHandle_t* xHandle_A = NULL;
 TaskHandle_t* xHandle_B = NULL;
 TaskHandle_t* xHandle_C = NULL;
 
+MessageBufferHandle_t xMessageBuffer;
+
 /*
  * The tasks as described in the comments at the top of this file.
  */
@@ -55,6 +58,14 @@ static void taskB(void* pvParameters);
 static void taskC(void* pvParameters);
 
 static void idelWork(int t);
+
+
+
+struct AMessage
+{
+    char ucMessageID;
+    char ucData[10];
+} xMessage;
 
 void main_blinky(void)
 { 
@@ -69,6 +80,17 @@ void main_blinky(void)
 
     xTaskCreate(taskC, "ZX", configMINIMAL_STACK_SIZE, NULL, taskC_PRIORITY, NULL);	/* The task handle is not required, so NULL is passed. */
 
+    const size_t xMessageBufferSizeBytes = 100;
+
+    /* Create a message buffer that can hold 100 bytes.  The memory used to hold
+    both the message buffer structure and the data in the message buffer is
+    allocated dynamically. */
+    xMessageBuffer = xMessageBufferCreate(xMessageBufferSizeBytes);
+
+    xMessage.ucMessageID = 0x41;
+    memset(&(xMessage.ucData), 0x42, 10);
+    printf("\nmemset: %s\n", xMessage.ucData);
+
     vTaskStartScheduler();
 
     for (;; );
@@ -80,10 +102,16 @@ static void taskA(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
     (void)pvParameters;    
-
+    int x = 42;
     for (;;)
     {
         printf("In task A\n");
+        size_t xBytesSent;
+        char* pcStringToSend = "String to send";
+
+        xBytesSent = xMessageBufferSend(xMessageBuffer,
+            (void*)pcStringToSend,
+            strlen(pcStringToSend), (TickType_t)100);
 
         vTaskDelay(2000);
     }
@@ -97,6 +125,16 @@ static void taskB(void* pvParameters)
     for (;; )
     {
         printf("   In task B\n");
+        size_t xReceivedBytes;
+        char ucRxData[50];
+
+        xReceivedBytes = xMessageBufferReceive(xMessageBuffer,
+            (void*)ucRxData,
+            sizeof(ucRxData),
+            (TickType_t)100);
+
+        ucRxData[xReceivedBytes] = '\0';
+        printf("Received msg: %s\n", ucRxData);
        
         vTaskDelay(1000);
     }
