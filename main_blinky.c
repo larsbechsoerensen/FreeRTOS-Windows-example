@@ -122,7 +122,7 @@ static void taskB(void* pvParameters)
 
     for (;; )
     {
-        printf("   In task B\n");
+        printf(" In task B\n");
         int i;
         int* pti = &i;
         if (xQueueReceive(xQueue1, &(i), (TickType_t)10) == pdPASS)
@@ -152,7 +152,6 @@ static void taskB(void* pvParameters)
 }
 
 
-
 static void taskC(void* pvParameters)
 {
     /* Prevent the compiler warning about the unused parameter. */
@@ -160,7 +159,7 @@ static void taskC(void* pvParameters)
 
     for (;; )
     {
-        printf("      In task C\n");
+        printf("   In task C\n");
         vTaskDelay(5000);
     }
 }
